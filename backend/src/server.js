@@ -39,10 +39,7 @@ const PORT = process.env.PORT || 4000;
 async function connectWithRetry(uri, retries=5, delayMs=3000) {
   for (let i = 0; i < retries; i++) {
     try {
-      await mongoose.connect(uri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
+      await mongoose.connect(process.env.MONGO_URI);
       console.log('MongoDB connected');
       return;
     } catch (err) {
