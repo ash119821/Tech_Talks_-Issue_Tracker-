@@ -14,6 +14,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' }});
 app.set('io', io);
 
+// ------------------- SOCKET.IO -------------------
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
@@ -22,15 +23,27 @@ io.on('connection', (socket) => {
   });
 });
 
+// ------------------- NEW AUTH + DASHBOARD ROUTES -------------------
+const authRoutes = require('./routes/auth');
+const dashboardRoutes = require('./routes/dashboard');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+// ---------------------------------------------------
+
+// ------------------- EXISTING ROUTES -------------------
 const logsRouter = require('./routes/logs');
 const incidentsRouter = require('./routes/incidents');
 
 app.use('/api/logs', logsRouter);
 app.use('/api/incidents', incidentsRouter);
 
-app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+// ------------------- HEALTH CHECK -------------------
+app.get('/api/health', (req, res) =>
+  res.json({ ok: true, time: new Date().toISOString() })
+);
 
-// Example test routes (you will use models later)
+// ------------------- TEST DB ROUTE -------------------
 app.get('/api/ping-db', async (req, res) => {
   try {
     const state = mongoose.connection.readyState; // 0 disconnected, 1 connected, 2 connecting
@@ -40,21 +53,21 @@ app.get('/api/ping-db', async (req, res) => {
   }
 });
 
-// Mongoose connection with retry
+// ------------------- MONGODB CONNECTION -------------------
 const MONGO_URI = process.env.MONGO_URI || null;
 const PORT = process.env.PORT || 4000;
 
-async function connectWithRetry(uri, retries=5, delayMs=3000) {
+async function connectWithRetry(uri, retries = 5, delayMs = 3000) {
   for (let i = 0; i < retries; i++) {
     try {
       await mongoose.connect(process.env.MONGO_URI);
       console.log('MongoDB connected');
       return;
     } catch (err) {
-      console.warn(`MongoDB connection attempt ${i+1} failed: ${err.message}`);
+      console.warn(`MongoDB connection attempt ${i + 1} failed: ${err.message}`);
       if (i < retries - 1) {
         console.log(`Retrying in ${delayMs}ms...`);
-        await new Promise(r => setTimeout(r, delayMs));
+        await new Promise((r) => setTimeout(r, delayMs));
       } else {
         throw err;
       }
@@ -62,6 +75,7 @@ async function connectWithRetry(uri, retries=5, delayMs=3000) {
   }
 }
 
+// ------------------- START SERVER -------------------
 async function startServer() {
   if (MONGO_URI) {
     try {
