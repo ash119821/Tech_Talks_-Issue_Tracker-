@@ -1,1 +1,1 @@
-# Tech_Talks_Issue_Tracker
+# Mini Security Operations Control System
